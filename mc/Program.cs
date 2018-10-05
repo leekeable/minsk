@@ -23,25 +23,20 @@ namespace mc
                 PrettyPrint(expression);
                 Console.ForegroundColor = color;
 
-                // var lexer = new Lexer(line);
-                // while (true)
-                // {
-                //     var token = lexer.NextToken();
-                //     if (token.Kind == SyntaxKind.EndOfFileToken)
-                //         break;
+                if (parser.Diagnostics.Any())
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
 
-                //     Console.Write($"{token.Kind}: '{token.Text}'");
-
-                //     if (token.Value != null)
-                //         Console.Write($" {token.Value}");
-
-                //     Console.WriteLine();
-                // }
+                    foreach (var diag in parser.Diagnostics)
+                    {
+                        Console.WriteLine(diag);
+                    }
+                    Console.ForegroundColor = color;
+                }
             }
         }
         static void PrettyPrint(SyntaxNode node, string indent = "", bool islast = true)
         {
-
             var marker = islast ? "└──" : "├──";
 
             Console.Write(indent);
@@ -108,6 +103,7 @@ namespace mc
     {
         private readonly string _text;
         private int _position;
+        private List<string> _diagnostics = new List<string>();
 
         private char Current
         {
@@ -117,7 +113,7 @@ namespace mc
                 return _text[_position];
             }
         }
-
+        public IEnumerable<string> Diagnostics => _diagnostics;
         private void Next()
         {
             _position++;
@@ -171,6 +167,7 @@ namespace mc
             else if (Current == ')')
                 return new SyntaxToken(SyntaxKind.CloseParenToken, _position++, ")", null);
 
+            _diagnostics.Add($"ERROR: bad character input: '{Current}'");
             return new SyntaxToken(SyntaxKind.BadToken, _position++, _text.Substring(_position - 1, 1), null);
         }
     }
@@ -228,6 +225,8 @@ namespace mc
     class Parser
     {
         private readonly SyntaxToken[] _tokens;
+
+        private List<string> _diagnostics = new List<string>();
         private int _position;
 
         public Parser(string text)
@@ -249,7 +248,10 @@ namespace mc
             } while (token.Kind != SyntaxKind.EndOfFileToken);
 
             _tokens = tokens.ToArray();
+            _diagnostics.AddRange(lexer.Diagnostics);
         }
+
+        public IEnumerable<string> Diagnostics => _diagnostics;
 
         private SyntaxToken Peek(int offset)
         {
@@ -274,6 +276,8 @@ namespace mc
         {
             if (Current.Kind == kind)
                 return NextToken();
+
+            _diagnostics.Add($"ERROR: Unexpected token <{Current.Kind}>, expected <{kind}>");
             return new SyntaxToken(kind, Current.Position, null, null);
         }
 
