@@ -81,7 +81,8 @@ namespace mc
         BadToken,
         EndOfFileToken,
         NumberExpression,
-        BinaryExpression
+        BinaryExpression,
+        ParenthesizedExpression
     }
 
     class SyntaxToken : SyntaxNode
@@ -230,6 +231,27 @@ namespace mc
         }
     }
 
+    sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
+    {
+        public ParenthesizedExpressionSyntax(SyntaxToken openParenthesisToken, ExpressionSyntax expression, SyntaxToken closeParenthesisToken)
+        {
+            OpenParenthesisToken = openParenthesisToken;
+            Expression = expression;
+            CloseParenthesisToken = closeParenthesisToken;
+        }
+        public override SyntaxKind Kind => SyntaxKind.ParenthesizedExpression;
+
+        public SyntaxToken OpenParenthesisToken { get; }
+        public ExpressionSyntax Expression { get; }
+        public SyntaxToken CloseParenthesisToken { get; }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpenParenthesisToken;
+            yield return Expression;
+            yield return CloseParenthesisToken;
+        }
+    }
     sealed class SyntaxTree
     {
         public SyntaxTree(IEnumerable<string> diagnostics, ExpressionSyntax root, SyntaxToken endOfFileToken)
@@ -303,6 +325,11 @@ namespace mc
             return new SyntaxToken(kind, Current.Position, null, null);
         }
 
+        private ExpressionSyntax ParseExpression()
+        {
+            return ParseTerm();
+        }
+
         public SyntaxTree Parse()
         {
             var expression = ParseTerm();
@@ -341,6 +368,14 @@ namespace mc
         }
         private ExpressionSyntax ParsePrimaryExpression()
         {
+            if (Current.Kind == SyntaxKind.OpenParenToken)
+            {
+                var left = NextToken();
+                var expression = ParseExpression();
+                var right = Match(SyntaxKind.CloseParenToken);
+                return new ParenthesizedExpressionSyntax(left, expression, right);
+            }
+
             var numberToken = Match(SyntaxKind.NumberToken);
             return new NumberExpressionSyntax(numberToken);
         }
@@ -381,6 +416,10 @@ namespace mc
                     throw new Exception($"Unexpected binary operator {b.OperatorToken.Kind}");
 
             }
+
+            if (node is ParenthesizedExpressionSyntax p)
+                return EvaluateExpression(p.Expression);
+
             throw new Exception($"Unexpected node {node.Kind}");            
         }
     }
