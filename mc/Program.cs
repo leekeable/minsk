@@ -8,6 +8,7 @@ namespace mc
     {
         static void Main(string[] args)
         {
+            bool showtree = false;
             while (true)
             {
                 Console.Write("> ");
@@ -15,12 +16,25 @@ namespace mc
                 if (string.IsNullOrWhiteSpace(line))
                     return;
 
+                if (line == "#showtree")                
+                {
+                    showtree = !showtree;
+                    Console.WriteLine(showtree ? "Showing parse tree" : "Not showing parse tree");
+                }
+                else if (line == "#cls")
+                {
+                    Console.Clear();
+                }
+
                 var syntaxTree = SyntaxTree.Parse(line);
 
-                var color = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                PrettyPrint(syntaxTree.Root);
-                Console.ForegroundColor = color;
+                if (showtree)
+                {
+                    var color = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    PrettyPrint(syntaxTree.Root);
+                    Console.ForegroundColor = color;
+                }
 
                 if (!syntaxTree.Diagnostics.Any())
                 {
@@ -30,6 +44,7 @@ namespace mc
                 }
                 else
                 {
+                    var color = Console.ForegroundColor;                    
                     Console.ForegroundColor = ConsoleColor.DarkRed;
 
                     foreach (var diag in syntaxTree.Diagnostics)
