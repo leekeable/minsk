@@ -15,8 +15,7 @@ namespace mc
                 if (string.IsNullOrWhiteSpace(line))
                     return;
 
-                var parser = new Parser(line);
-                var syntaxTree = parser.Parse();
+                var syntaxTree = SyntaxTree.Parse(line);
 
                 var color = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -264,6 +263,12 @@ namespace mc
         public IReadOnlyList<string> Diagnostics { get; }
         public ExpressionSyntax Root { get; }
         public SyntaxToken EndOfFileToken { get; }
+
+        public static SyntaxTree Parse(string text)
+        {
+            var parser = new Parser(text);
+            return parser.Parse();
+        }
     }
 
     class Parser
