@@ -17,12 +17,12 @@ namespace Minsk
                 if (string.IsNullOrWhiteSpace(line))
                     return;
 
-                if (line == "#showtree")                
+                if (line.ToLower() == "#showtree")                
                 {
                     showtree = !showtree;
                     Console.WriteLine(showtree ? "Showing parse tree" : "Not showing parse tree");
                 }
-                else if (line == "#cls")
+                else if (line.ToLower() == "#cls")
                 {
                     Console.Clear();
                 }
@@ -56,6 +56,7 @@ namespace Minsk
                 }
             }
         }
+        
         static void PrettyPrint(SyntaxNode node, string indent = "", bool islast = true)
         {
             var marker = islast ? "└──" : "├──";
